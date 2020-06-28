@@ -189,7 +189,7 @@ int calaulate_state_value (OthelloBoard cur_OB, Point newPoint) {
     std::vector<Point> nxt_next_valid_spots = (*nxt_board).get_valid_spots();
     int move_difference = cur_next_valid_spots.size() - nxt_next_valid_spots.size();
 
-    value += 5 * move_difference;
+    value += 8 * move_difference;
 
     return value;
 }
