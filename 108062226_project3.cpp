@@ -7,7 +7,7 @@
 
 #define max(a, b) a > b ? a : b
 #define min(a, b) a < b ? a : b
-#define MAX_DEPTH 7
+#define MAX_DEPTH 6
 
 struct Point {
     int x, y;
@@ -31,21 +31,20 @@ int player;
 const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> board;
 std::vector<Point> NEXT_valid_spots;
-
-
-class OthelloBoard {
-public:
-    enum SPOT_STATE {
+enum SPOT_STATE {
         EMPTY = 0,
         BLACK = 1,
         WHITE = 2
-    };
-    static const int SIZE = 8;
-    const std::array<Point, 8> directions{{
+};
+const std::array<Point, 8> directions{{
         Point(-1, -1), Point(-1, 0), Point(-1, 1),
         Point(0, -1), /*{0, 0}, */Point(0, 1),
         Point(1, -1), Point(1, 0), Point(1, 1)
-    }};
+}};
+
+class OthelloBoard {
+public:
+    static const int SIZE = 8;
     std::array<std::array<int, SIZE>, SIZE> board;
     std::vector<Point> next_valid_spots;
     // counters for black/white/total
@@ -161,19 +160,120 @@ public:
 
 };
 
-int MyValue[8][8] = {   {500, -50, 20,  5, 5, 20, -50, 500},
-                        {-50, -80,  1,  1, 1,  1, -80, -50},
-                        { 20,   1,  3,  2, 2,  3,   1,  20},
+int MyValue[8][8] = {   {500, -300, 10,  5, 5, 10,-300, 500},
+                        {-300, -400,  1,  1, 1,  1, -400, -300},
+                        { 10,   1,  3,  2, 2,  3,   1,  10},
                         {  5,   1,  2,  1, 1,  2,   1,   5},
                         {  5,   1,  2,  1, 1,  2,   1,   5},
-                        { 20,   1,  3,  2, 2,  3,   1,  20},
-                        {-50, -80,  1,  1, 1,  1, -80, -50},
-                        {500, -50, 20,  5, 5, 20, -50, 500}};
+                        { 10,   1,  3,  2, 2,  3,   1,  10},
+                        {-300, -400,  1,  1, 1,  1, -400, -300},
+                        {500, -300, 10,  5, 5, 10, -300, 500}};
 
 enum MAX_MIN {
     maximize = 0,
     minimize = 1
 };
+
+bool is_stable(OthelloBoard obob, Point p){
+    int nxt_player = 3 - obob.cur_player;
+        if(obob.board[0][0] == nxt_player){
+            Point pp = p;
+            while(pp.x < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x--;
+            }
+            pp = p;
+            while(pp.y < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.y--;
+            }
+            pp = p;
+            while(pp.x < 0 || pp.y < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x--;
+                pp.y--;
+            }
+        }
+        if(obob.board[7][0] == nxt_player){
+            Point pp = p;
+            while(pp.x > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x++;
+            }
+            pp = p;
+            while(pp.y < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.y--;
+            }
+            pp = p;
+            while(pp.x > 7 || pp.y < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x++;
+                pp.y--;
+            }
+        }
+        if(obob.board[0][7] == nxt_player){
+            Point pp = p;
+            while(pp.x < 0){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x--;
+            }
+            pp = p;
+            while(pp.y > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.y++;
+            }
+            pp = p;
+            while(pp.x < 0 || pp.y > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x--;
+                pp.y++;
+            }
+        }
+        if(obob.board[7][7] == nxt_player){
+            Point pp = p;
+            while(pp.x > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x++;
+            }
+            pp = p;
+            while(pp.y > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.y++;
+            }
+            pp = p;
+            while(pp.x > 7 || pp.y > 7){
+                if(obob.board[pp.x][pp.y] != nxt_player){
+                    return false;
+                }
+                pp.x++;
+                pp.y++;
+            }
+        }
+    return true;
+}
 
 // calculate state values
 int calaulate_state_value (OthelloBoard cur_OB, Point newPoint) {
@@ -182,6 +282,8 @@ int calaulate_state_value (OthelloBoard cur_OB, Point newPoint) {
     int j = newPoint.y;
     value = MyValue[i][j];
 
+    int stable_line = 0;
+    int stable_point = 0;
     OthelloBoard *cur_board = new OthelloBoard(cur_OB.board, cur_OB.cur_player);
     OthelloBoard *nxt_board = new OthelloBoard(cur_OB.board, newPoint);
 
@@ -189,11 +291,32 @@ int calaulate_state_value (OthelloBoard cur_OB, Point newPoint) {
     std::vector<Point> nxt_next_valid_spots = (*nxt_board).get_valid_spots();
     int move_difference = cur_next_valid_spots.size() - nxt_next_valid_spots.size();
 
-    value += 8 * move_difference;
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j < SIZE; j++){
+            Point pp(i, j);
+            if((*nxt_board).board[i][j] == player){
+                if(is_stable((*nxt_board), pp)){
+                    stable_point++;
+                }
+            }
+        }
+    }
+    int cur_nxt_player = 3 - (*cur_board).cur_player;
+    int nxt_nxt_player = (*nxt_board).cur_player;
+
+    //
+    if((*nxt_board).disc_count[EMPTY] < 10){
+        int disc_difference = (*cur_board).disc_count[cur_nxt_player] - (*nxt_board).disc_count[nxt_nxt_player];
+        value += 6 * disc_difference;
+    }
+
+    value += 5 * stable_point;
+    value += 6 * move_difference;
 
     return value;
 }
 
+// Tree Search
 int alpha_beta_pruning(OthelloBoard OB, Point newPoint, int depth, int alpha, int beta, int which_player){
     // basic steps
     if (depth == MAX_DEPTH)
@@ -219,7 +342,6 @@ int alpha_beta_pruning(OthelloBoard OB, Point newPoint, int depth, int alpha, in
             return beta;
         }
     }
-
     return 0;
 }
 
@@ -243,6 +365,28 @@ void read_valid_spots(std::ifstream& fin) {
 }
 
 void write_valid_spot(std::ofstream& fout) {
+    OthelloBoard *ob = new OthelloBoard(board, player);
+    if ((*ob).board[0][0] == player) {
+        MyValue[0][1] = (MyValue[0][1] < 0) ? MyValue[0][1] * -1 : MyValue[0][1];
+        MyValue[1][0] = (MyValue[1][0] < 0) ? MyValue[1][0] * -1 : MyValue[1][0];
+        MyValue[1][1] = (MyValue[1][1] < 0) ? MyValue[1][1] * -1 : MyValue[1][1];
+    }
+
+    if ((*ob).board[0][7] == player) {
+        MyValue[0][6] = (MyValue[0][6] < 0) ? MyValue[0][6] * -1 : MyValue[0][6];
+        MyValue[1][7] = (MyValue[1][7] < 0) ? MyValue[1][7] * -1 : MyValue[1][7];
+        MyValue[1][6] = (MyValue[1][6] < 0) ? MyValue[1][6] * -1 : MyValue[1][6];
+    }
+    if ((*ob).board[7][0] == player) {
+        MyValue[7][1] = (MyValue[7][1] < 0) ? MyValue[7][1] * -1 : MyValue[7][1];
+        MyValue[6][0] = (MyValue[6][0] < 0) ? MyValue[6][0] * -1 : MyValue[6][0];
+        MyValue[6][1] = (MyValue[6][1] < 0) ? MyValue[6][1] * -1 : MyValue[6][1];
+    }
+    if ((*ob).board[7][7] == player) {
+        MyValue[7][6] = (MyValue[7][6] < 0) ? MyValue[7][6] * -1 : MyValue[7][6];
+        MyValue[6][7] = (MyValue[6][7] < 0) ? MyValue[6][7] * -1 : MyValue[6][7];
+        MyValue[6][6] = (MyValue[6][6] < 0) ? MyValue[6][6] * -1 : MyValue[6][6];
+    }
 
     Point corner1(0, 0), corner2(0, 7), corner3(7, 7), corner4(7, 0);
     Point p;
@@ -261,8 +405,7 @@ void write_valid_spot(std::ofstream& fout) {
         int state_value[n_valid_spots];
         for (int i = 0; i < n_valid_spots; i++) {
             Point pp = NEXT_valid_spots[i];
-            OthelloBoard *ob = new OthelloBoard(board, player);
-            int sv = alpha_beta_pruning((*ob), pp, 0, -1000, 1000, minimize);
+            int sv = alpha_beta_pruning((*ob), pp, 0, -2000, 2000, minimize);
             state_value[i] = sv;
         }
 
